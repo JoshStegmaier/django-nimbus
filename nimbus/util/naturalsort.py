@@ -1,7 +1,7 @@
 import re
 import copy
 
-def try_int(value):
+def try_int_cast(value):
     """
     Attempts to cast value to an int. On failure, returns original value
     """
@@ -14,7 +14,7 @@ def _natural_sort_key(value):
     """
     Used internally to get a tuple by which value is sorted.
     """
-    return map(try_int, re.findall(r'(\d+|\D+)', value))
+    return map(try_int_cast, re.findall(r'(\d+|\D+)', value))
 
 def natural_sort_comparison(value1, value2):
     """
