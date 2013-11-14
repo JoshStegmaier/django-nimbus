@@ -1,34 +1,21 @@
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
+from django.contrib.auth.views import redirect_to_login
 
-from braces.views import AccessMixin, PermissionRquiredMixin
+from braces.views import AccessMixin, PermissionRequiredMixin
 
 class CheckObjectOwnerMethodMixin(object):
     user_attribute = 'user'
-    raise_exception = False
 
     def check_object_owner(self, request):
         is_owner = getattr(self.get_object(), self.user_attribute) == request.user
 
         if not is_owner:
-            if self.raise_exception:
-                raise PermissionDenied
-            else:
-                return redirect_to_login(request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
+            return False
         else:
             return True
 
-    def get_object():
-        raise NotImplementedError
-
-    def get_login_url():
-        raise NotImplementedError
-
-    def get_redirect_field_name():
-        raise NotImplementedError
-
 class CheckUserPermissionMethodMixin(object):
     permission_required = None
-    raise_exception = False
 
     def check_user_permission(self, request):
         if self.permission_required is None:
@@ -37,22 +24,25 @@ class CheckUserPermissionMethodMixin(object):
         has_permission = request.user.has_perm(self.permission_required)
 
         if not has_permission:
-            if self.raise_exception:
-                raise PermissionDenied
-            else:
-                return redirect_to_login(request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
+            return False
+        else:
+            return True
 
-        return super(PermissionRequiredMixin, self).dispatch(
-            request, *args, **kwargs)
 
-    def get_login_url():
+class CheckAccessMixin(AccessMixin):
+    def check_access(self, request, *args, **kwargs):
         raise NotImplementedError
 
-    def get_redirect_field_name():
-        raise NotImplementedError
+    def dispatch(self, request, *args, **kwargs):
+        if self.check_access(request, *args, **kwargs):
+            return super(CheckAccessMixin, self).dispatch(request, *args, **kwargs)
+        elif self.raise_exception:
+            raise PermissionDenied
+        else:
+            return redirect_to_login(request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
 
 
-class CheckObjectOwnerMixin(CheckObjectOwnerMethodMixin, AccessMixin):
+class CheckObjectOwnerMixin(CheckObjectOwnerMethodMixin, CheckAccessMixin):
     """
     View mixin which verifies that the logged in user is the owner of the object of the view.
     Should only be used with a CBV that subclasses SingleObjectMixin or one that otherwise
@@ -77,11 +67,11 @@ class CheckObjectOwnerMixin(CheckObjectOwnerMethodMixin, AccessMixin):
         ...
     """
 
-    def dispatch(self, request, *args, **kwargs):
-        if self.check_object_owner(request):
-            return super(CheckObjectOwnerMixin, self).dispatch(request, *args, **kwargs)
+    def check_access(self, request, *args, **kwargs):
+        return self.check_object_owner(request)
 
-class CheckObjectOwnerOrUserPermissionMixin(CheckUserPermissionMethodMixin, AccessMixin):
+
+class CheckObjectOwnerOrUserPermissionMixin(CheckObjectOwnerMethodMixin, CheckUserPermissionMethodMixin, CheckAccessMixin):
     """
     View mixin which verifies that the logged in user is the owner of the object of the view
     or that the user has the permission needed to access the object.
@@ -110,9 +100,11 @@ class CheckObjectOwnerOrUserPermissionMixin(CheckUserPermissionMethodMixin, Acce
         ...
     """
 
-    def dispatch(self, request, *args, **kwargs):
-        try:
-            self.check_object_owner(request)
-        except PermissionDenied:
-            if self.check_user_permission(request):
-                return super(CCheckObjectOwnerOrUserPermissionMixin, self).dispatch(request, *args, **kwargs)
+    def check_access(self, request, *args, **kwargs):
+        if self.check_object_owner(request):
+            return True
+        elif self.check_user_permission(request):
+            return True
+        else:
+            return False
+
