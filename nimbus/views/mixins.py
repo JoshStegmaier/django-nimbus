@@ -2,6 +2,7 @@ from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.contrib.auth.views import redirect_to_login
 
 from braces.views import AccessMixin, PermissionRequiredMixin
+from actstream import action
 
 class CheckObjectOwnerMethodMixin(object):
     user_attribute = 'user'
@@ -28,7 +29,6 @@ class CheckUserPermissionMethodMixin(object):
         else:
             return True
 
-
 class CheckAccessMixin(AccessMixin):
     def check_access(self, request, *args, **kwargs):
         raise NotImplementedError
@@ -40,7 +40,6 @@ class CheckAccessMixin(AccessMixin):
             raise PermissionDenied
         else:
             return redirect_to_login(request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
-
 
 class CheckObjectOwnerMixin(CheckObjectOwnerMethodMixin, CheckAccessMixin):
     """
@@ -69,7 +68,6 @@ class CheckObjectOwnerMixin(CheckObjectOwnerMethodMixin, CheckAccessMixin):
 
     def check_access(self, request, *args, **kwargs):
         return self.check_object_owner(request)
-
 
 class CheckObjectOwnerOrUserPermissionMixin(CheckObjectOwnerMethodMixin, CheckUserPermissionMethodMixin, CheckAccessMixin):
     """
@@ -108,3 +106,43 @@ class CheckObjectOwnerOrUserPermissionMixin(CheckObjectOwnerMethodMixin, CheckUs
         else:
             return False
 
+class GenerateActionMixin(object):
+    actor = None
+    verb = None
+    action_object = None
+    target = None
+
+    def generate_action(self, actor=None, verb=None, action_object=None, target=None, *args, **kwargs):
+        if not actor:
+            actor = self.get_action_actor()
+        if not verb:
+            verb = self.get_action_verb()
+        if not action_object:
+            action_object = self.get_action_action_object()
+        if not target:
+            target = self.get_action_target()
+
+        if not actor:
+            raise ValueError(("Generating an action requires 'actor' to be defined, "
+                "either as an argument on the generate_action method call, as an "
+                "attribute on the class or by overriding the get_action_actor method "
+                "on the class."))
+        if not verb:
+            raise ValueError(("Generating an action requires 'verb' to be defined, "
+                "either as an argument on the generate_action method call, as an "
+                "attribute on the class or by overriding the get_action_verb method "
+                "on the class."))
+
+        action.send(actor, verb=verb, action_object=action_object, target=target)
+
+    def get_action_actor(self, *args, **kwargs):
+        return self.actor
+
+    def get_action_verb(self, *args, **kwargs):
+        return self.verb
+
+    def get_action_action_object(self, *args, **kwargs):
+        return self.action_object
+
+    def get_action_target(self, *args, **kwargs):
+        return self.target
