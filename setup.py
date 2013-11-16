@@ -10,7 +10,7 @@ setup(
     author_email="jrs@joshstegmaier.com",
     url="https://github.com/JoshStegmaier/django-nimbus/",
     license="MIT",
-    packages=["nimbus", "nimbus.filehandling", "nimbus.util", "nimbus.views"],
+    packages=["nimbus", "nimbus.filehandling", "nimbus.util", "nimbus.views", "nimbus.models"],
     classifiers=[
         "Programming Language :: Python",
         "Topic :: Software Development :: Libraries :: Python Modules",
