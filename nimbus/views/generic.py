@@ -32,7 +32,7 @@ class CreateViewWithActionStream(GenerateActionMixin, CreateView):
         return 'added'
 
     def get_action_action_object(self, *args, **kwargs):
-        return self.get_object()
+        return self.object
 
 class UpdateViewWithActionStream(GenerateActionMixin, UpdateView):
     
