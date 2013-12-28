@@ -31,7 +31,7 @@ class CreateViewWithActionStream(GenerateActionMixin, CreateView):
     def get_action_verb(self, *args, **kwargs):
         return 'added'
 
-    def get_action_object(self, *args, **kwargs):
+    def get_action_action_object(self, *args, **kwargs):
         return self.get_object()
 
 class UpdateViewWithActionStream(GenerateActionMixin, UpdateView):
@@ -47,5 +47,5 @@ class UpdateViewWithActionStream(GenerateActionMixin, UpdateView):
     def get_action_verb(self, *args, **kwargs):
         return 'updated'
 
-    def get_action_object(self, *args, **kwargs):
+    def get_action_action_object(self, *args, **kwargs):
         return self.get_object()
