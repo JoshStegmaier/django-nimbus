@@ -33,13 +33,16 @@ class CheckAccessMixin(AccessMixin):
     def check_access(self, request, *args, **kwargs):
         raise NotImplementedError
 
+    def redirect_to(self, *args, **kwargs):
+        return redirect_to_login(request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
+
     def dispatch(self, request, *args, **kwargs):
         if self.check_access(request, *args, **kwargs):
             return super(CheckAccessMixin, self).dispatch(request, *args, **kwargs)
         elif self.raise_exception:
             raise PermissionDenied
         else:
-            return redirect_to_login(request.get_full_path(), self.get_login_url(), self.get_redirect_field_name())
+            return self.redirect_to()
 
 class CheckObjectOwnerMixin(CheckObjectOwnerMethodMixin, CheckAccessMixin):
     """
