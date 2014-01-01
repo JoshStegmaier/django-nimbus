@@ -6,7 +6,8 @@ from .mixins import GenerateActionMixin
 class DetailViewWithActionStream(GenerateActionMixin, DetailView):
 
     def dispatch(self, request, *args, **kwargs):
-        self.generate_action()
+        if not request.user.is_anonymous():
+            self.generate_action()
         return super(DetailViewWithActionStream, self).dispatch(request, *args, **kwargs)
 
     def get_action_actor(self, *args, **kwargs):
@@ -22,7 +23,8 @@ class CreateViewWithActionStream(GenerateActionMixin, CreateView):
 
     def form_valid(self, form):
         to_return = super(CreateViewWithActionStream, self).form_valid(form)
-        self.generate_action()
+        if not request.user.is_anonymous():
+            self.generate_action()
         return to_return
 
     def get_action_actor(self, *args, **kwargs):
@@ -38,7 +40,8 @@ class UpdateViewWithActionStream(GenerateActionMixin, UpdateView):
     
     def form_valid(self, form):
         to_return = super(UpdateViewWithActionStream, self).form_valid(form)
-        self.generate_action()
+        if not request.user.is_anonymous():
+            self.generate_action()
         return to_return
 
     def get_action_actor(self, *args, **kwargs):
